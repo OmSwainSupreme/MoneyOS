@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_password
+      POSTGRES_DB: moneyos_db
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U db_user']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  frontend:
+    build: ./apps/frontend
+    command: npm start
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/frontend:/usr/src/app
+
+  backend:
+    build: ./apps/backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/backend:/usr/src/app

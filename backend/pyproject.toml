@@ -1,0 +1,23 @@
+[tool.ruff]
+# Code quality
+select = ['E', 'F', 'W', 'C90', 'B', 'UP', 'N', 'YTT', 'BIN', 'DT']
+async = True
+
+# Format code
+line-length = 79
+indent-style = 'space'
+
+# Test
+extend-select = ['ANN', 'LYI']
+per-file-ignores = [
+    'tests__init__.py',
+    'setup.py',
+    'pyproject.toml',
+    'vite.config.py',
+    'package.json',
+    'package-lock.json',
+    'tsconfig.json',
+]
+
+# Backups
+skip-missing-files = True

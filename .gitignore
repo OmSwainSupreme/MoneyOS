@@ -1,0 +1,28 @@
+# Node.js
+/node_modules
+/yarn.lock
+/.pnpm
+/.cache
+*.log
+*.tmp
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+.env
+
+# Docker
+*.docker
+*.env
+.dockerignore
+.DS_Store
+
+# General
+.DS_Store
+*.log
+*.tmp
+*.swp
+*.swo
+*.sxw

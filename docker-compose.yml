@@ -20,11 +20,10 @@ services:
       context: .
       dockerfile: Dockerfile
       target: frontend
-    command: npm start
+    working_dir: /app
+    command: npm run preview --workspace @moneyos/frontend -- --host 0.0.0.0 --port 3000
     ports:
       - "3000:3000"
-    volumes:
-      - ./apps/frontend:/app/apps/frontend
 
   backend:
     build:

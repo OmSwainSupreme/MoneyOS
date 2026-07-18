@@ -4,7 +4,7 @@ MoneyOS is an AI-powered Financial Decision Engine that helps users make confide
 - Can I buy this bike?
 - Should I take this loan?
 - Where am I overspending?
-- How can I improve my financial health?
+- How can I improve my financial health? 
 
 ## Technologies
 - **Frontend:** Next.js, TypeScript, Tailwind CSS, shadcn/ui

@@ -8,12 +8,15 @@ prefix is driven by configuration rather than hard-coded here.
 
 from __future__ import annotations
 
+from auth.router import auth_router, user_router
 from fastapi import APIRouter
 
 from api.routes.health import router as health_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
+api_router.include_router(auth_router)
+api_router.include_router(user_router)
 
-# TODO(backend): register feature routers (auth, accounts, transactions,
+# TODO(backend): register feature routers (accounts, transactions,
 # decisions) as the corresponding phases land.

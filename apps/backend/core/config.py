@@ -80,6 +80,7 @@ try:  # Preferred production path.
         # --- Security (wired in a later phase) ---
         secret_key: str = Field(default="")
         access_token_expire_minutes: int = Field(default=30)
+        refresh_token_expire_days: int = Field(default=7)
 
         # --- AI providers (wired in a later phase) ---
         ai_provider: str = Field(default="")
@@ -204,6 +205,7 @@ except ImportError:  # Offline fallback - not used in the Docker image.
         # --- Security (wired in a later phase) ---
         secret_key: str = Field(default="")
         access_token_expire_minutes: int = Field(default=30)
+        refresh_token_expire_days: int = Field(default=7)
 
         # --- AI providers (wired in a later phase) ---
         ai_provider: str = Field(default="")
@@ -276,6 +278,9 @@ def _build_settings() -> Settings:
             "secret_key": _env("SECRET_KEY", ""),
             "access_token_expire_minutes": _env_int(
                 "ACCESS_TOKEN_EXPIRE_MINUTES", 30
+            ),
+            "refresh_token_expire_days": _env_int(
+                "REFRESH_TOKEN_EXPIRE_DAYS", 7
             ),
             "ai_provider": _env("AI_PROVIDER", ""),
             "ai_api_key": _env("AI_API_KEY", ""),

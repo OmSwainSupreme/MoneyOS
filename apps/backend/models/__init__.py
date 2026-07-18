@@ -9,9 +9,11 @@ discovered by autogenerate.
 
 from __future__ import annotations
 
-from database.base import Base
-
 # Register model modules here in later phases, e.g.:
 #   from models.account import Account  # noqa: F401
+from auth.models import User  # noqa: F401  (registers users table; import the
+from database.base import Base
 
-__all__ = ["Base"]
+# module directly to avoid pulling in auth.router and the FastAPI app graph)
+
+__all__ = ["Base", "User"]

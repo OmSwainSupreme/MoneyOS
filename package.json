@@ -1,18 +1,22 @@
 {
-  "private": false,
+  "name": "moneyos",
+  "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "next": "^13.5.6",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "dev": "npm run dev --workspace @moneyos/frontend",
+    "build": "npm run build --workspace @moneyos/frontend",
+    "start": "npm run start --workspace @moneyos/frontend",
+    "dev:backend": "npm run dev --workspace @moneyos/backend",
+    "lint:frontend": "npm run lint --workspace @moneyos/frontend",
+    "typecheck:frontend": "npm run typecheck --workspace @moneyos/frontend",
+    "setup": "bash ./scripts/setup.sh"
   },
   "workspaces": [
     "apps/frontend",
     "apps/backend",
     "packages/shared"
-  ]
+  ],
+  "overrides": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
 }

@@ -145,8 +145,8 @@ export function DecisionWizard({ title, description, steps, buildInput }: Wizard
   );
 }
 
-interface StepFormProps {
-  step: WizardStep;
+interface StepFormProps<TSchema extends ZodType = ZodType> {
+  step: WizardStep<TSchema>;
   initialValues: Record<string, unknown>;
   canGoBack: boolean;
   isLast: boolean;
@@ -156,7 +156,7 @@ interface StepFormProps {
   onSubmit: (values: Record<string, unknown>) => void | Promise<void>;
 }
 
-function StepForm({
+function StepForm<TSchema extends ZodType>({
   step,
   initialValues,
   canGoBack,
@@ -165,10 +165,10 @@ function StepForm({
   error,
   onBack,
   onSubmit,
-}: StepFormProps) {
-  const form = useForm({
+}: StepFormProps<TSchema>) {
+  const form = useForm<z.infer<TSchema>>({
     resolver: zodResolver(step.schema),
-    defaultValues: { ...step.defaultValues, ...initialValues } as never,
+    defaultValues: { ...step.defaultValues, ...initialValues } as z.infer<TSchema>,
     mode: "onChange",
   });
 
@@ -178,7 +178,7 @@ function StepForm({
 
   return (
     <form onSubmit={handle} noValidate className="rounded-md border border-border bg-card p-4">
-      {step.render(form)}
+      {step.render(form as UseFormReturn<z.infer<TSchema>>)}
       {error ? (
         <p role="alert" className="mt-3 text-sm text-[color:var(--color-danger-zone)]">
           {error}

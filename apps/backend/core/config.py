@@ -16,6 +16,18 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any, Final
 
+# Default database URL uses the asyncpg driver explicitly. Override in
+# production via the DATABASE_URL environment variable (also asyncpg).
+_DEFAULT_DATABASE_URL: Final[str] = (
+    "postgresql+asyncpg://db_user:db_password@localhost:5432/moneyos_db"
+)
+# Development defaults that must never be used in production.
+_INSECURE_DEFAULTS = {
+    "database_url": _DEFAULT_DATABASE_URL,
+    "secret_key": "",
+}
+
+
 try:  # Preferred production path.
     from pydantic import Field
     from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -53,12 +65,17 @@ try:  # Preferred production path.
         cors_allow_methods: list[str] = Field(default=["*"])
         cors_allow_headers: list[str] = Field(default=["*"])
 
-        # --- Database (wired in a later phase) ---
-        database_url: str = Field(
-            default=(
-                "postgresql://db_user:db_password@localhost:5432/moneyos_db"
-            )
-        )
+        # --- Database ---
+        # Explicit asyncpg connection string. Override via DATABASE_URL in
+        # deployment; the scheme must remain postgresql+asyncpg.
+        database_url: str = Field(default=_DEFAULT_DATABASE_URL)
+        # Async connection pool tuning.
+        db_pool_size: int = Field(default=5)
+        db_max_overflow: int = Field(default=10)
+        db_pool_timeout: int = Field(default=30)
+        db_pool_recycle: int = Field(default=1800)
+        db_pool_pre_ping: bool = Field(default=True)
+        db_echo: bool = Field(default=False)
 
         # --- Security (wired in a later phase) ---
         secret_key: str = Field(default="")
@@ -72,6 +89,34 @@ try:  # Preferred production path.
         def is_production(self) -> bool:
             """Return ``True`` when running in a production environment."""
             return self.environment.lower() in {"production", "prod"}
+
+        @property
+        def async_database_url(self) -> str:
+            """The asyncpg DSN consumed by the async engine.
+
+            The connection string is already asyncpg-explicit (see
+            ``database_url``), so this returns it directly.
+            """
+            return self.database_url
+
+        def validate_production(self) -> None:
+            """Fail startup when insecure development defaults are detected.
+
+            Raises:
+                RuntimeError: When running in production with the default
+                    database URL or an empty ``secret_key``.
+            """
+            if not self.is_production:
+                return
+            if self.database_url == _INSECURE_DEFAULTS["database_url"]:
+                raise RuntimeError(
+                    "Refusing to start in production with the default "
+                    "development database URL. Set DATABASE_URL."
+                )
+            if self.secret_key == _INSECURE_DEFAULTS["secret_key"]:
+                raise RuntimeError(
+                    "Refusing to start in production with an empty SECRET_KEY."
+                )
 
 except ImportError:  # Offline fallback - not used in the Docker image.
     _USING_PYDANTIC_SETTINGS = False
@@ -144,12 +189,17 @@ except ImportError:  # Offline fallback - not used in the Docker image.
         cors_allow_methods: list[str] = Field(default=["*"])
         cors_allow_headers: list[str] = Field(default=["*"])
 
-        # --- Database (wired in a later phase) ---
-        database_url: str = Field(
-            default=(
-                "postgresql://db_user:db_password@localhost:5432/moneyos_db"
-            )
-        )
+        # --- Database ---
+        # Explicit asyncpg connection string. Override via DATABASE_URL in
+        # deployment; the scheme must remain postgresql+asyncpg.
+        database_url: str = Field(default=_DEFAULT_DATABASE_URL)
+        # Async connection pool tuning.
+        db_pool_size: int = Field(default=5)
+        db_max_overflow: int = Field(default=10)
+        db_pool_timeout: int = Field(default=30)
+        db_pool_recycle: int = Field(default=1800)
+        db_pool_pre_ping: bool = Field(default=True)
+        db_echo: bool = Field(default=False)
 
         # --- Security (wired in a later phase) ---
         secret_key: str = Field(default="")
@@ -163,6 +213,34 @@ except ImportError:  # Offline fallback - not used in the Docker image.
         def is_production(self) -> bool:
             """Return ``True`` when running in a production environment."""
             return self.environment.lower() in {"production", "prod"}
+
+        @property
+        def async_database_url(self) -> str:
+            """The asyncpg DSN consumed by the async engine.
+
+            The connection string is already asyncpg-explicit (see
+            ``database_url``), so this returns it directly.
+            """
+            return self.database_url
+
+        def validate_production(self) -> None:
+            """Fail startup when insecure development defaults are detected.
+
+            Raises:
+                RuntimeError: When running in production with the default
+                    database URL or an empty ``secret_key``.
+            """
+            if not self.is_production:
+                return
+            if self.database_url == _INSECURE_DEFAULTS["database_url"]:
+                raise RuntimeError(
+                    "Refusing to start in production with the default "
+                    "development database URL. Set DATABASE_URL."
+                )
+            if self.secret_key == _INSECURE_DEFAULTS["secret_key"]:
+                raise RuntimeError(
+                    "Refusing to start in production with an empty SECRET_KEY."
+                )
 
 
 def _build_settings() -> Settings:
@@ -187,8 +265,14 @@ def _build_settings() -> Settings:
             "cors_allow_headers": _env_list("CORS_ALLOW_HEADERS", ["*"]),
             "database_url": _env(
                 "DATABASE_URL",
-                "postgresql://db_user:db_password@localhost:5432/moneyos_db",
+                _DEFAULT_DATABASE_URL,
             ),
+            "db_pool_size": _env_int("DB_POOL_SIZE", 5),
+            "db_max_overflow": _env_int("DB_MAX_OVERFLOW", 10),
+            "db_pool_timeout": _env_int("DB_POOL_TIMEOUT", 30),
+            "db_pool_recycle": _env_int("DB_POOL_RECYCLE", 1800),
+            "db_pool_pre_ping": _env_bool("DB_POOL_PRE_PING", True),
+            "db_echo": _env_bool("DB_ECHO", False),
             "secret_key": _env("SECRET_KEY", ""),
             "access_token_expire_minutes": _env_int(
                 "ACCESS_TOKEN_EXPIRE_MINUTES", 30

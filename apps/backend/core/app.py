@@ -15,6 +15,7 @@ import contextlib
 from collections.abc import AsyncIterator, Callable
 
 from api.router import api_router
+from database.session import dispose_engine, get_engine
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -54,12 +55,14 @@ def _build_lifespan(settings: Settings) -> Callable[[FastAPI], object]:
             settings.environment,
             settings.debug,
         )
-        # TODO(backend): open DB pool, connect caches, workers (Phase 2+).
+        # Initialize the async engine/connection pool at startup.
+        get_engine(settings)
         try:
             yield {"settings": settings}
         finally:
             logger.info("Shutting down %s", settings.service_name)
-            # TODO(backend): close DB pool and release resources (Phase 2+).
+            # Release pooled database connections on shutdown.
+            await dispose_engine()
 
     return lifespan
 
@@ -106,6 +109,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """
     configure_root_logger()
     resolved = settings or get_settings()
+    # Fail fast in production on insecure defaults (e.g. default DB URL).
+    resolved.validate_production()
 
     app = FastAPI(
         title=resolved.project_name,

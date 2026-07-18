@@ -35,8 +35,12 @@ services:
     environment:
       - PYTHONPATH=/app/apps/backend
       - PORT=8000
+      - DATABASE_URL=postgresql+asyncpg://db_user:db_password@postgres:5432/moneyos_db
     ports:
       - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - ./apps/backend:/app/apps/backend
 

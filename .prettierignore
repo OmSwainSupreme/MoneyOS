@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+
+# Build output
+.next
+out
+dist
+build
+*.tsbuildinfo
+
+# Python
+__pycache__
+*.pyc
+venv
+.venv
+apps/backend/venv
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Misc
+coverage
+.pytest_cache
+.ruff_cache
+*.md

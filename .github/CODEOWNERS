@@ -1,0 +1,26 @@
+# CODEOWNERS for MoneyOS
+# These users/teams will be requested for review when matching files are modified.
+
+# Global owners (required approval for all PRs)
+* @moneyos-maintainers
+
+# Backend
+/apps/backend/ @moneyos-backend
+
+# Frontend
+/apps/frontend/ @moneyos-frontend
+
+# Shared packages
+/packages/shared/ @moneyos-shared
+
+# Infrastructure / CI
+/.github/ @moneyos-infra
+/docker-compose.yml @moneyos-infra
+/Dockerfile @moneyos-infra
+
+# Documentation
+/docs/ @moneyos-docs
+
+# Security-sensitive files
+/apps/backend/core/security.py @moneyos-security
+/apps/backend/core/config.py @moneyos-security

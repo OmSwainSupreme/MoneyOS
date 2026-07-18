@@ -1,0 +1,15 @@
+{
+  "name": "@moneyos/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared types, constants, utils and validation schemas for MoneyOS",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    "./types": "./types/index.ts",
+    "./constants": "./constants/index.ts",
+    "./utils": "./utils/index.ts",
+    "./validation": "./validation/index.ts"
+  },
+  "license": "MIT"
+}

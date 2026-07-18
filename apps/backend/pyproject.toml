@@ -1,23 +1,14 @@
-[tool.ruff]
-# Code quality
-select = ['E', 'F', 'W', 'C90', 'B', 'UP', 'N', 'YTT', 'BIN', 'DT']
-async = True
-
-# Format code
-line-length = 79
-indent-style = 'space'
-
-# Test
-extend-select = ['ANN', 'LYI']
-per-file-ignores = [
-    'tests__init__.py',
-    'setup.py',
-    'pyproject.toml',
-    'vite.config.py',
-    'package.json',
-    'package-lock.json',
-    'tsconfig.json',
+[project]
+name = "moneyos-backend"
+version = "0.1.0"
+description = "MoneyOS backend API (FastAPI)."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
 ]
 
-# Backups
-skip-missing-files = True
+# Linting/formatting is governed by the repository-root ruff.toml.

@@ -5,7 +5,7 @@
 #   docker build --target backend  -t moneyos-backend .
 
 # =====================================================================
-# BASE STAGE — shared dependencies
+# BASE STAGE - shared dependencies
 # =====================================================================
 FROM node:20-alpine AS base
 WORKDIR /app
@@ -57,18 +57,18 @@ WORKDIR /app
 RUN pip install --no-cache-dir uv
 
 # Copy backend manifests
-COPY apps/backend/requirements.txt ./requirements.txt
+COPY apps/backend/requirements.txt ./apps/backend/requirements.txt
 
 # Install Python deps into a virtualenv
 RUN uv venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+    /opt/venv/bin/pip install --no-cache-dir -r apps/backend/requirements.txt
 
 # =====================================================================
 # BACKEND RUNTIME
 # =====================================================================
 FROM python:3.11-slim AS backend
-WORKDIR /app
-ENV PYTHONPATH=/app
+WORKDIR /app/apps/backend
+ENV PYTHONPATH=/app/apps/backend
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 
@@ -76,7 +76,7 @@ ENV PORT=8000
 COPY --from=backend-builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy backend source
+# Copy backend source (build context is the repository root)
 COPY apps/backend ./apps/backend
 
 EXPOSE 8000

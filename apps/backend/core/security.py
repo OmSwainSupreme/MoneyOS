@@ -4,6 +4,7 @@ Scaffolding only — concrete algorithms are implemented in Phase 1+.
 All PII must be scrubbed before any data leaves the trust boundary to
 third-party LLM providers (see docs/security/).
 """
+
 from __future__ import annotations
 
 

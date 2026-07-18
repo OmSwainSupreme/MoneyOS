@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Dropzone } from "@/components/import/Dropzone";
 import { useFinanceStore } from "@/lib/store/financeStore";
+import {
+  downloadSample,
+  useSampleData,
+} from "@/features/import";
 import {
   TransactionCategorySchema,
   TransactionSchema,
@@ -71,6 +76,7 @@ function normalizeRow(raw: Record<string, unknown>, index: number): unknown {
 
 function ImportPage() {
   const addTransactions = useFinanceStore((s) => s.addTransactions);
+  const { loadSample } = useSampleData();
   const [rows, setRows] = useState<RowResult[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -134,13 +140,34 @@ function ImportPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Import statement
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Files stay in your browser. Nothing is uploaded.
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Import statement
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Files stay in your browser. Nothing is uploaded.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {/* TODO(backend): replace client-only sample merge with a server
+              upload + reconcile once the import API exists. */}
+          <Button onClick={loadSample} variant="outline">
+            Load sample data
+          </Button>
+          <Button
+            onClick={() => downloadSample("csv")}
+            variant="ghost"
+          >
+            Download CSV
+          </Button>
+          <Button
+            onClick={() => downloadSample("json")}
+            variant="ghost"
+          >
+            Download JSON
+          </Button>
+        </div>
       </header>
       <Dropzone onFile={handleFile} />
       {busy ? (

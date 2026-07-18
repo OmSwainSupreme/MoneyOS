@@ -3,9 +3,10 @@
 Scaffolding — engine + session factory + FastAPI dependency. Concrete
 bindings are configured in Phase 1 (PostgreSQL via async or sync driver).
 """
+
 from __future__ import annotations
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from core.config import get_settings
 

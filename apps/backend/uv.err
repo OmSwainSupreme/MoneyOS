@@ -1,0 +1,5 @@
+INFO:     Started server process [23220]
+INFO:     Waiting for application startup.
+2026-07-18 17:11:58,748 INFO     core.app [app.py:50] Starting MoneyOS API v0.1.0 (env=development, debug=False)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8015 (Press CTRL+C to quit)

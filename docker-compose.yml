@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
@@ -41,3 +40,6 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend:/app/apps/backend
+
+volumes:
+  postgres_data:

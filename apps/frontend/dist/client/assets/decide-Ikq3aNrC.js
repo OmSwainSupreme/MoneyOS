@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-CIxEorsV.js";import{n as t}from"./index-DOTbisSN.js";var n=e();function r(){return(0,n.jsx)(`main`,{className:`mx-auto w-full max-w-4xl px-4 py-8 sm:px-6`,children:(0,n.jsx)(t,{})})}export{r as component};

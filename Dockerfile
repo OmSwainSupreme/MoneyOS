@@ -9,11 +9,7 @@
 # =====================================================================
 FROM node:20-alpine AS base
 WORKDIR /app
-# Install pnpm for fast installs
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy package manifests
-COPY package.json package-lock.json* pnpm-lock.yaml* ./
+# Frontend uses npm (package-lock.json) + Vite. No pnpm/corepack needed.
 
 # =====================================================================
 # FRONTEND BUILD
@@ -21,15 +17,18 @@ COPY package.json package-lock.json* pnpm-lock.yaml* ./
 FROM base AS frontend-builder
 WORKDIR /app
 
-# Install all deps (including dev for build)
-RUN pnpm install --frozen-lockfile
+# npm workspaces install: copy the root manifest + lockfile and every
+# workspace package.json first so `npm ci` resolves the full tree from the
+# committed lockfile (respecting root overrides) with maximum layer caching.
+COPY package.json package-lock.json ./
+COPY apps/frontend/package.json ./apps/frontend/package.json
+COPY packages/shared/package.json ./packages/shared/package.json
+RUN npm ci
 
-# Copy frontend source
+# Copy sources and build the frontend workspace (Vite -> dist/).
+COPY packages/shared ./packages/shared
 COPY apps/frontend ./apps/frontend
-
-# Build frontend
-WORKDIR /app/apps/frontend
-RUN pnpm run build
+RUN npm run build --workspace @moneyos/frontend
 
 # =====================================================================
 # FRONTEND RUNTIME
@@ -39,13 +38,19 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy built output
-COPY --from=frontend-builder /app/apps/frontend/.next/standalone ./
-COPY --from=frontend-builder /app/apps/frontend/.next/static ./.next/static
-COPY --from=frontend-builder /app/apps/frontend/public ./public
+# Copy built app from the builder. In an npm workspaces install the
+# node_modules tree and workspace symlinks live at the repo root, so the
+# runtime WORKDIR stays /app and we copy with absolute destinations.
+# The root manifest is required so `npm run preview --workspace` resolves.
+COPY --from=frontend-builder /app/package.json ./package.json
+COPY --from=frontend-builder /app/package-lock.json ./package-lock.json
+COPY --from=frontend-builder /app/node_modules ./node_modules
+COPY --from=frontend-builder /app/apps/frontend ./apps/frontend
+COPY --from=frontend-builder /app/packages/shared ./packages/shared
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+# TanStack Start build is served by Vite preview on the configured port.
+CMD ["npm", "run", "preview", "--workspace", "@moneyos/frontend", "--", "--host", "0.0.0.0", "--port", "3000"]
 
 # =====================================================================
 # BACKEND BUILD
@@ -61,7 +66,7 @@ COPY apps/backend/requirements.txt ./apps/backend/requirements.txt
 
 # Install Python deps into a virtualenv
 RUN uv venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir -r apps/backend/requirements.txt
+    uv pip install --python /opt/venv --no-cache-dir -r apps/backend/requirements.txt
 
 # =====================================================================
 # BACKEND RUNTIME
@@ -76,8 +81,9 @@ ENV PORT=8000
 COPY --from=backend-builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy backend source (build context is the repository root)
-COPY apps/backend ./apps/backend
+# Copy backend source (build context is the repository root) into the
+# working directory so `main:app` resolves from WORKDIR=/app/apps/backend.
+COPY apps/backend ./
 
 EXPOSE 8000
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -20,6 +20,8 @@ try:  # Preferred production path.
     from pydantic import Field
     from pydantic_settings import BaseSettings, SettingsConfigDict
 
+    _USING_PYDANTIC_SETTINGS = True
+
     class Settings(BaseSettings):
         """Typed runtime configuration sourced from the environment."""
 
@@ -72,6 +74,7 @@ try:  # Preferred production path.
             return self.environment.lower() in {"production", "prod"}
 
 except ImportError:  # Offline fallback - not used in the Docker image.
+    _USING_PYDANTIC_SETTINGS = False
     import os
     from pathlib import Path
 
@@ -164,7 +167,7 @@ except ImportError:  # Offline fallback - not used in the Docker image.
 
 def _build_settings() -> Settings:
     """Load environment/dotenv and construct the typed ``Settings``."""
-    if "pydantic_settings" not in globals():
+    if not _USING_PYDANTIC_SETTINGS:
         _load_dotenv()
         data: dict[str, Any] = {
             "project_name": _env("PROJECT_NAME", "MoneyOS"),

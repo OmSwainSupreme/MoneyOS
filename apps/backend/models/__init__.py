@@ -13,10 +13,22 @@ from __future__ import annotations
 #   from models.account import Account  # noqa: F401
 from auth.models import User  # noqa: F401  (registers users table; import the
 from database.base import Base
+from financial.models import (
+    Account,  # noqa: F401  (registers accounts table)
+    Category,  # noqa: F401  (registers categories table)
+    Transaction,  # noqa: F401  (registers transactions table)
+)
 from user.models import (
     UserProfile,  # noqa: F401  (registers user_profiles table)
 )
 
 # module directly to avoid pulling in auth.router and the FastAPI app graph)
 
-__all__ = ["Base", "User", "UserProfile"]
+__all__ = [
+    "Base",
+    "User",
+    "UserProfile",
+    "Account",
+    "Category",
+    "Transaction",
+]

@@ -21,6 +21,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from database.base import Base
 
+# Import the domain models so their tables register on ``Base.metadata`` and are
+# picked up by ``create_all`` / ``drop_all`` in the fixtures above.
+import models  # noqa: F401  (side-effect: metadata registration)
+from models import (  # noqa: F401
+    Account,
+    Category,
+    Transaction,
+    User,
+    UserProfile,
+)
+
 # Migration-level extensions/constraints are not applied by ``create_all`` (it
 # does not run Alembic), so the tests that depend on them are skipped unless a
 # Postgres instance with the migration applied is provided. ``create_all`` is
@@ -102,8 +113,34 @@ async def migrated_session():
         pytest.skip("TEST_DATABASE_URL not set or Postgres unreachable")
     # The migration is applied out-of-band by the test runner (see CI). Here we
     # assume the target DB already has the migrated schema, so we just yield a
-    # session and truncate between tests for isolation.
+    # session. Tests that commit (e.g. route tests) must not leak rows into the
+    # next case, so we truncate every table after the test regardless of whether
+    # it rolled back or committed.
     assert _sessionmaker is not None
     async with _sessionmaker() as session:
-        yield session
-        await session.rollback()
+        try:
+            yield session
+        finally:
+            # Best-effort isolation: discard any committed state, then truncate.
+            await session.rollback()
+            await _truncate_all(session)
+
+
+async def _truncate_all(session: AsyncSession) -> None:
+    """Truncate every known table to keep tests isolated.
+
+    Runs in its own transaction that is committed, so rows left behind by a
+    committing test are wiped before the next case runs. Tables are truncated
+    WITH RESTART IDENTITY / CASCADE to reset sequences and honor FKs.
+    """
+    from sqlalchemy import text
+
+    table_names = ", ".join(
+        f'"{t.name}"' for t in Base.metadata.sorted_tables
+    )
+    if not table_names:
+        return
+    async with session.begin():
+        await session.execute(
+            text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY CASCADE")
+        )

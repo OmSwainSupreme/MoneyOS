@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, List
 
-from apps.backend.statements.schemas import NormalizedTransaction
+from statements.schemas import NormalizedTransaction
 
 
 class BaseNormalizer(ABC):

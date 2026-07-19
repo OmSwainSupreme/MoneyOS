@@ -1,6 +1,6 @@
 """Utility helpers for the Statement Ingestion & Parsing Framework."""
 
-from apps.backend.statements.utils.validation import (
+from statements.utils.validation import (
     MAX_FILE_SIZE_BYTES,
     SUPPORTED_MIME_TYPES,
     detect_mime_type,

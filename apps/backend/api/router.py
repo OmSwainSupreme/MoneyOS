@@ -12,15 +12,28 @@ from auth.router import auth_router, user_router
 from fastapi import APIRouter
 
 from api.routes.health import router as health_router
+from financial.router import (
+    accounts_router,
+    analytics_router,
+    categories_router,
+    dashboard_router,
+    decision_router,
+    transactions_router,
+)
+from services.ai.router import chat_router
+from statements.router import router as statements_router
+from user.router import user_router as user_profile_router
 
 api_router = APIRouter()
 api_router.include_router(health_router)
 api_router.include_router(auth_router)
 api_router.include_router(user_router)
-
-from user.router import user_router as user_profile_router  # noqa: E402
-
 api_router.include_router(user_profile_router)
-
-# TODO(backend): register feature routers (accounts, transactions,
-# decisions) as the corresponding phases land.
+api_router.include_router(accounts_router)
+api_router.include_router(categories_router)
+api_router.include_router(transactions_router)
+api_router.include_router(dashboard_router)
+api_router.include_router(analytics_router)
+api_router.include_router(decision_router)
+api_router.include_router(statements_router)
+api_router.include_router(chat_router)

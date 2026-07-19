@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, List
 
-from apps.backend.statements.exceptions import NormalizationFailed
-from apps.backend.statements.parsers.base import BaseStatementParser
+from statements.exceptions import NormalizationFailed
+from statements.parsers.base import BaseStatementParser
 
 
 class GenericParser(BaseStatementParser):
@@ -21,6 +21,8 @@ class GenericParser(BaseStatementParser):
         "date": {"date", "transaction_date", "txn_date", "posting_date", "value_date"},
         "description": {"description", "narration", "particulars", "details", "remarks"},
         "amount": {"amount", "txn_amount", "transaction_amount"},
+        "debit": {"debit", "withdrawal", "dr", "debited", "debit_amount"},
+        "credit": {"credit", "deposit", "cr", "credited", "credit_amount"},
         "currency": {"currency", "ccy", "cur"},
         "balance": {"balance", "running_balance", "closing_balance"},
         "reference_number": {"reference", "ref", "ref_no", "cheque_no", "cheque_number", "utr"},

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from core.config import Settings, get_settings
 from database.session import get_db_session
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -19,13 +20,10 @@ from auth.exceptions import AuthError
 from auth.schemas import UserPublic
 from auth.service import AuthService
 
-# Imported lazily to avoid an import cycle: ``api.dependencies`` -> ``api`` ->
-# ``api.router`` -> ``auth.router`` -> ``auth.dependencies``. ``SettingsDep`` is
-# only referenced inside function annotations, so a deferred import is safe.
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from api.dependencies import SettingsDep
+# Defined locally rather than imported from ``api.dependencies`` to avoid an
+# import cycle (api -> api.router -> auth.router -> auth.dependencies). The
+# underlying ``get_settings`` is cycle-free (core.config).
+SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 # Reject missing credentials with 401 instead of 403; we want aWWW-Authenticate
 # challenge semantics for bearer auth.

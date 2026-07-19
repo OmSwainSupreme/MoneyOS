@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, List
 
-from apps.backend.statements.exceptions import CorruptStatement, ExtractionFailed
-from apps.backend.statements.extractors.base import BaseExtractor
+from statements.exceptions import CorruptStatement, ExtractionFailed
+from statements.extractors.base import BaseExtractor
 
 
 class ExcelExtractor(BaseExtractor):

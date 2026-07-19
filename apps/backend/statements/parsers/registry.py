@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
-from apps.backend.statements.exceptions import UnsupportedFileType
-from apps.backend.statements.parsers.base import BaseStatementParser
+from statements.exceptions import UnsupportedFileType
+from statements.parsers.base import BaseStatementParser
 
 
 class ParserRegistry:

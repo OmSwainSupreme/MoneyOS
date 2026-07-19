@@ -37,6 +37,16 @@ from user.exceptions import (
     InvalidPreference,
     UnsupportedCurrency,
 )
+from financial.exceptions import (
+    AccountNotFound,
+    AccountOwnershipError,
+    CategoryNotFound,
+    CategoryOwnershipError,
+    InvalidAmountError,
+    InvalidCurrencyError,
+    InvalidEnumValueError,
+    TransactionNotFound,
+)
 
 logger = get_logger(__name__)
 
@@ -97,6 +107,25 @@ def _register_exception_handlers(app: FastAPI) -> None:
     register_domain_exception(ProfileNotFound, 404, "profile_not_found")
     register_domain_exception(UnsupportedCurrency, 422, "unsupported_currency")
     register_domain_exception(InvalidPreference, 422, "invalid_preference")
+    # Financial domain.
+    register_domain_exception(AccountNotFound, 404, "account_not_found")
+    register_domain_exception(CategoryNotFound, 404, "category_not_found")
+    register_domain_exception(
+        TransactionNotFound, 404, "transaction_not_found"
+    )
+    register_domain_exception(
+        AccountOwnershipError, 403, "account_access_denied"
+    )
+    register_domain_exception(
+        CategoryOwnershipError, 403, "category_access_denied"
+    )
+    register_domain_exception(
+        InvalidCurrencyError, 422, "unsupported_currency"
+    )
+    register_domain_exception(
+        InvalidEnumValueError, 422, "invalid_enum_value"
+    )
+    register_domain_exception(InvalidAmountError, 422, "invalid_amount")
     # AuthError / UserError are bases; they still resolve to a generic mapping.
     register_domain_exception(AuthError, 401, "auth_error")
     register_domain_exception(UserError, 400, "user_error")

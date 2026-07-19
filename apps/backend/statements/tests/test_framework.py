@@ -7,15 +7,15 @@ from typing import Any
 
 import pytest
 
-from apps.backend.statements.exceptions import (
+from statements.exceptions import (
     EmptyStatement,
     UnsupportedFileType,
 )
-from apps.backend.statements.extractors.csv import CSVExtractor
-from apps.backend.statements.normalizers.statement import StatementNormalizer
-from apps.backend.statements.parsers.generic import GenericParser
-from apps.backend.statements.service import StatementService
-from apps.backend.statements.utils.validation import (
+from statements.extractors.csv import CSVExtractor
+from statements.normalizers.statement import StatementNormalizer
+from statements.parsers.generic import GenericParser
+from statements.service import StatementService
+from statements.utils.validation import (
     SUPPORTED_MIME_TYPES,
     detect_mime_type,
     is_supported_mime_type,

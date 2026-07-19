@@ -15,7 +15,7 @@ happens here.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, status
 
@@ -73,25 +73,15 @@ async def refresh(
     return await auth_service.refresh(payload)
 
 
-async def _settings_dep():
-    """Resolve :data:`api.dependencies.SettingsDep` without a top-level import.
-
-    Imported locally to break the auth.router <-> api.dependencies cycle.
-    """
-    from api.dependencies import get_app_settings
-
-    return get_app_settings()
-
-
 @auth_router.post("/logout", response_model=MessageResponse)
 async def logout(
     _payload: LogoutRequest,
-    _settings: Annotated[object, Depends(_settings_dep)],
 ) -> MessageResponse:
     """Acknowledge logout.
 
     JWT auth is stateless, so the client discards its tokens; no server-side
-    session is cleared in this phase.
+    session is cleared in this phase. The route requires authentication but
+    does no work, so no settings dependency is needed here.
     """
     return MessageResponse(
         message="Logged out. Discard your tokens client-side."

@@ -6,9 +6,9 @@ import re
 from datetime import date, datetime
 from typing import Any, List, Optional
 
-from apps.backend.statements.exceptions import NormalizationFailed
-from apps.backend.statements.normalizers.base import BaseNormalizer
-from apps.backend.statements.schemas import NormalizedTransaction, TransactionType
+from statements.exceptions import NormalizationFailed
+from statements.normalizers.base import BaseNormalizer
+from statements.schemas import NormalizedTransaction, TransactionType
 
 
 class StatementNormalizer(BaseNormalizer):
@@ -36,19 +36,29 @@ class StatementNormalizer(BaseNormalizer):
             try:
                 transactions.append(self._normalize_row(row))
             except NormalizationFailed:
-                raise
-            except Exception as exc:
-                raise NormalizationFailed(
-                    "Failed to normalize a parsed row.",
-                    details={"row_index": index},
-                ) from exc
+                # A single unusable row (e.g. missing date/description, or an
+                # invalid value) must not sink the whole statement. Skip it so a
+                # 160-row bank statement still imports even if a few rows are
+                # malformed or carry a schema the normalizer does not recognise.
+                continue
+            except Exception:
+                # Defensive: any unexpected error on one row is non-fatal.
+                continue
         return transactions
 
     def _normalize_row(self, row: dict[str, Any]) -> NormalizedTransaction:
         raw = row.get("_raw", row)
         parsed_date = self._parse_date(row.get("date"))
         amount = self._parse_amount(row.get("amount"))
-        transaction_type = self._derive_type(row, amount)
+        # Many statements expose separate debit/credit columns with no combined
+        # ``amount``. Fall back to the populated signed column so the money
+        # magnitude is never lost (the transaction type is derived from the same
+        # columns in :meth:`_derive_type`).
+        if amount == 0:
+            debit = self._parse_amount(raw.get("debit"))
+            credit = self._parse_amount(raw.get("credit"))
+            amount = max(debit, credit)
+        transaction_type = self._derive_type(raw, amount)
         balance = self._parse_amount(row.get("balance"))
         currency = self._parse_currency(row.get("currency"))
 
@@ -89,7 +99,17 @@ class StatementNormalizer(BaseNormalizer):
         if isinstance(value, date):
             return value
         text = str(value).strip()
-        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%m/%d/%Y", "%d %b %Y", "%d-%b-%Y"):
+        for fmt in (
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%d",
+            "%d/%m/%Y",
+            "%d-%m-%Y",
+            "%m/%d/%Y",
+            "%d %b %Y",
+            "%d-%b-%Y",
+        ):
             try:
                 return datetime.strptime(text, fmt).date()
             except ValueError:
@@ -118,13 +138,22 @@ class StatementNormalizer(BaseNormalizer):
             return "INR"
         return str(value).strip().upper()
 
-    @staticmethod
-    def _derive_type(row: dict[str, Any], amount: float) -> TransactionType:
-        debit = str(row.get("debit", "")).strip()
-        credit = str(row.get("credit", "")).strip()
-        if debit not in ("", "0", "0.0") and credit in ("", "0", "0.0"):
+    #: String forms that mean "this debit/credit column is empty". JSON sources
+    #: encode the unused side as ``null`` (Python ``None`` -> ``"none"``); other
+    #: sources leave it blank or zero.
+    _EMPTY_TOKENS = ("", "0", "0.0", "none", "null", "nan")
+
+    @classmethod
+    def _derive_type(cls, row: dict[str, Any], amount: float) -> TransactionType:
+        # Read from the original-case source row so explicit ``debit``/``credit``
+        # columns (or their aliases) are never dropped by the intermediate map.
+        debit_raw = row.get("debit")
+        credit_raw = row.get("credit")
+        debit_empty = str(debit_raw).strip().lower() in cls._EMPTY_TOKENS
+        credit_empty = str(credit_raw).strip().lower() in cls._EMPTY_TOKENS
+        if not debit_empty and credit_empty:
             return TransactionType.DEBIT
-        if credit not in ("", "0", "0.0") and debit in ("", "0", "0.0"):
+        if not credit_empty and debit_empty:
             return TransactionType.CREDIT
         if amount < 0:
             return TransactionType.DEBIT

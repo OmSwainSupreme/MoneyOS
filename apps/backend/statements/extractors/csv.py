@@ -6,8 +6,8 @@ import csv
 import io
 from typing import Any, List
 
-from apps.backend.statements.exceptions import ExtractionFailed
-from apps.backend.statements.extractors.base import BaseExtractor
+from statements.exceptions import ExtractionFailed
+from statements.extractors.base import BaseExtractor
 
 
 class CSVExtractor(BaseExtractor):

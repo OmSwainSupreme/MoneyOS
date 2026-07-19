@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator
 
-from apps.backend.statements.exceptions import ExtractionFailed
+from statements.exceptions import ExtractionFailed
 
 
 class BaseExtractor(ABC):

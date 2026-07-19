@@ -60,6 +60,9 @@ class NormalizedStatement(BaseModel):
 class UploadResponse(BaseModel):
     """Response payload for POST /statements/upload."""
 
+    user_id: object | None = Field(
+        None, description="Owner of the upload (authenticated user)."
+    )
     source_format: str
     source_name: str
     transaction_count: int
@@ -69,9 +72,26 @@ class UploadResponse(BaseModel):
 class ValidateResponse(BaseModel):
     """Response payload for POST /statements/validate."""
 
+    user_id: object | None = Field(
+        None, description="Owner of the upload (authenticated user)."
+    )
     source_format: str
     source_name: str
     is_valid: bool
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     transaction_count: int = 0
+
+
+class ImportResponse(BaseModel):
+    """Response payload for POST /statements/import."""
+
+    account_id: object
+    stored_count: int = Field(..., description="Transactions persisted.")
+    skipped_count: int = Field(
+        ..., description="Rows not stored (e.g. unclassifiable)."
+    )
+    duplicate_count: int = Field(
+        0, description="Rows skipped because they already exist on the account."
+    )
+    transaction_ids: list[object] = Field(default_factory=list)

@@ -18,5 +18,9 @@ api_router.include_router(health_router)
 api_router.include_router(auth_router)
 api_router.include_router(user_router)
 
+from user.router import user_router as user_profile_router  # noqa: E402
+
+api_router.include_router(user_profile_router)
+
 # TODO(backend): register feature routers (accounts, transactions,
 # decisions) as the corresponding phases land.

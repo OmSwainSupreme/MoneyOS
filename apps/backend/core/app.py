@@ -20,8 +20,23 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from auth.exceptions import (
+    AuthError,
+    EmailAlreadyRegisteredError,
+    InactiveUserError,
+    InvalidCredentialsError,
+    InvalidTokenError,
+    TokenTypeError,
+)
 from core.config import Settings, get_settings
+from core.errors import register_domain_exception, register_exception_handlers
 from core.logging import configure_root_logger, get_logger
+from user.exceptions import ProfileNotFound, UserError
+
+from user.exceptions import (
+    InvalidPreference,
+    UnsupportedCurrency,
+)
 
 logger = get_logger(__name__)
 
@@ -68,21 +83,24 @@ def _build_lifespan(settings: Settings) -> Callable[[FastAPI], object]:
 
 
 def _register_exception_handlers(app: FastAPI) -> None:
-    """Register global exception handlers for consistent error responses.
+    """Register domain-to-envelope mappings and install global handlers.
 
-    Unexpected exceptions are logged and returned as a generic 500 payload
-    so internal details are never leaked to clients.
+    Domain exceptions are mapped to a stable (status, code) pair here so the
+    routers can simply raise them and the unified envelope is produced in one
+    place. Unexpected exceptions are logged and returned as a generic 500.
     """
-
-    @app.exception_handler(Exception)
-    async def unhandled_exception_handler(
-        request: Request, exc: Exception
-    ) -> JSONResponse:
-        logger.exception("Unhandled error on %s", request.url.path)
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "Internal Server Error"},
-        )
+    register_domain_exception(EmailAlreadyRegisteredError, 409, "email_taken")
+    register_domain_exception(InvalidCredentialsError, 401, "invalid_credentials")
+    register_domain_exception(InactiveUserError, 401, "account_inactive")
+    register_domain_exception(InvalidTokenError, 401, "invalid_token")
+    register_domain_exception(TokenTypeError, 401, "invalid_token_type")
+    register_domain_exception(ProfileNotFound, 404, "profile_not_found")
+    register_domain_exception(UnsupportedCurrency, 422, "unsupported_currency")
+    register_domain_exception(InvalidPreference, 422, "invalid_preference")
+    # AuthError / UserError are bases; they still resolve to a generic mapping.
+    register_domain_exception(AuthError, 401, "auth_error")
+    register_domain_exception(UserError, 400, "user_error")
+    register_exception_handlers(app)
 
 
 def _register_middleware(app: FastAPI, settings: Settings) -> None:

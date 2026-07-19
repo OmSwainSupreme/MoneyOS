@@ -20,6 +20,8 @@ select = [
 ignore = [
     "D203",  # one-blank-line-before-class (conflicts with D211)
     "D213",  # multi-line-summary-second-line (conflicts with D212)
+    "N818",  # exception names need not end in "Error" (domain names like
+            # ProfileNotFound/UnsupportedCurrency are spec-mandated)
 ]
 
 [lint.per-file-ignores]

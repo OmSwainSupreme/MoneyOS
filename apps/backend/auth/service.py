@@ -52,6 +52,11 @@ class AuthService:
     async def register(self, payload: RegisterRequest) -> UserPublic:
         """Register a new user and return its public projection.
 
+        A default :class:`~user.models.UserProfile` is created inside the same
+        transaction so the system never holds a user without a profile. The
+        user module is imported lazily to keep the auth and user packages
+        decoupled (neither imports the other at module load time).
+
         Raises:
             EmailAlreadyRegisteredError: When the email is already taken.
         """
@@ -60,8 +65,11 @@ class AuthService:
                 "A user with this email already exists."
             )
         password_hash = hash_password(payload.password)
+        from user.service import UserService
+
         async with transaction(self._session):
             user = await self._users.create(payload, password_hash)
+            await UserService(self._session).create_profile(user.id)
         return UserPublic.model_validate(user)
 
     async def authenticate(self, payload: LoginRequest) -> TokenPair:

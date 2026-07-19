@@ -36,7 +36,6 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(
         String(320),
-        unique=True,
         index=True,
         nullable=False,
     )

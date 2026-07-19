@@ -7,24 +7,19 @@ Exposes the identity endpoints:
     POST /auth/logout
     GET  /users/me
 
-Routes translate service-layer domain errors into HTTP responses and delegate
-all logic to :class:`~auth.service.AuthService`. No ORM or repository access
+Routes delegate all logic to :class:`~auth.service.AuthService` and raise the
+service's domain exceptions directly; :func:`core.errors.register_exception_handlers`
+translates them into the unified error envelope. No ORM or repository access
 happens here.
 """
 
 from __future__ import annotations
 
-from api.dependencies import SettingsDep
-from fastapi import APIRouter, HTTPException, status
+from typing import TYPE_CHECKING, Annotated
+
+from fastapi import APIRouter, Depends, status
 
 from auth.dependencies import AuthServiceDep, CurrentUserDep
-from auth.exceptions import (
-    EmailAlreadyRegisteredError,
-    InactiveUserError,
-    InvalidCredentialsError,
-    InvalidTokenError,
-    TokenTypeError,
-)
 from auth.schemas import (
     LoginRequest,
     LogoutRequest,
@@ -34,6 +29,13 @@ from auth.schemas import (
     TokenRefreshRequest,
     UserPublic,
 )
+
+# ``SettingsDep`` is imported lazily to avoid an import cycle:
+# ``api.dependencies`` -> ``api`` -> ``api.router`` -> ``auth.router`` ->
+# back into ``api.dependencies``. It is only referenced in the ``logout``
+# route signature, so a deferred import is safe.
+if TYPE_CHECKING:
+    from api.dependencies import SettingsDep
 
 # Auth endpoints live under /auth; /users/me is mounted separately below.
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
@@ -50,13 +52,7 @@ async def register(
     auth_service: AuthServiceDep,
 ) -> UserPublic:
     """Create a new account and return its public projection."""
-    try:
-        return await auth_service.register(payload)
-    except EmailAlreadyRegisteredError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"error": "email_taken", "message": str(exc)},
-        ) from exc
+    return await auth_service.register(payload)
 
 
 @auth_router.post("/login", response_model=TokenPair)
@@ -65,14 +61,7 @@ async def login(
     auth_service: AuthServiceDep,
 ) -> TokenPair:
     """Authenticate and return an access/refresh token pair."""
-    try:
-        return await auth_service.authenticate(payload)
-    except (InvalidCredentialsError, InactiveUserError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": "invalid_credentials", "message": str(exc)},
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
+    return await auth_service.authenticate(payload)
 
 
 @auth_router.post("/refresh", response_model=TokenPair)
@@ -81,20 +70,23 @@ async def refresh(
     auth_service: AuthServiceDep,
 ) -> TokenPair:
     """Exchange a refresh token for a fresh access/refresh pair."""
-    try:
-        return await auth_service.refresh(payload)
-    except (InvalidTokenError, TokenTypeError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": "invalid_token", "message": str(exc)},
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
+    return await auth_service.refresh(payload)
+
+
+async def _settings_dep():
+    """Resolve :data:`api.dependencies.SettingsDep` without a top-level import.
+
+    Imported locally to break the auth.router <-> api.dependencies cycle.
+    """
+    from api.dependencies import get_app_settings
+
+    return get_app_settings()
 
 
 @auth_router.post("/logout", response_model=MessageResponse)
 async def logout(
     _payload: LogoutRequest,
-    _settings: SettingsDep,
+    _settings: Annotated[object, Depends(_settings_dep)],
 ) -> MessageResponse:
     """Acknowledge logout.
 

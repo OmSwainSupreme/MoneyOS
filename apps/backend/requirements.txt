@@ -11,6 +11,10 @@ sqlalchemy[asyncio]>=2.0.0
 alembic>=1.13.0
 asyncpg>=0.29.0
 psycopg2-binary>=2.9.0
+# IANA time-zone database. Required so zoneinfo-based timezone validation in
+# user.schemas works deterministically on hosts without a system tz database
+# (e.g. Windows, slim containers).
+tzdata>=2024.1
 
 # --- AI / LLM (placeholder deps; providers wired in Phase 1+) ---
 # anthropic>=0.18.0
